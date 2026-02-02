@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Valentine</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+* { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+html, body { margin: 0; height: 100%; }
+body {
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Background as base64 pink lilies */
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAIAAAD8....') no-repeat center center;
+  background-size: cover;
+  background-color: #ffeef2;
+}
+main {
+  text-align: center;
+  padding: 26px;
+  background: rgba(255,255,255,0.78);
+  border-radius: 22px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 10;
+}
+h1 {
+  margin: 20px 0;
+  font-size: 2rem;
+  background: linear-gradient(90deg, #c2255c, #ff7aa2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.button-zone { position: relative; width: 280px; height: 160px; margin: 30px auto; }
+button {
+  padding: 14px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+#yesBtn {
+  background: #ff7aa2;
+  color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  animation: pulse 2.5s infinite;
+  z-index: 10;
+}
+#yesBtn:hover { box-shadow: 0 0 20px rgba(255,122,162,0.6); }
+#noBtn { background: #e5e5e5; position: absolute; left: 30px; top: 100px; z-index: 10; }
+#noBtn:hover { box-shadow: 0 0 12px rgba(0,0,0,0.15); }
+.hint { margin-top: 10px; color: #555; font-size: 0.9rem; z-index: 10; position: relative; }
+.result { display: none; margin-top: 20px; z-index: 10; position: relative; }
+.fireworks { width: 200px; max-width: 100%; margin-top: 10px; border-radius: 12px; }
+canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+.lily-floating {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  fill: white;
+  stroke: #c2255c;
+  stroke-width: 2;
+  opacity: 0.8;
+  animation: float linear infinite;
+}
+@keyframes float {
+  0% { transform: translateY(-10%) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 rgba(255,122,162,0);}50%{box-shadow:0 0 18px rgba(255,122,162,0.5);} }
+</style>
+</head>
+
+<body>
+<canvas id="confettiCanvas"></canvas>
+
+<main>
+  <h1>Will you be my Valentine?</h1>
+
+  <section class="button-zone" id="zone">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </section>
+
+  <div class="hint" id="hint">“No” seems a bit shy 😈</div>
+
+  <section class="result" id="result">
+    <h2>YAY! 🎉</h2>
+    <img class="fireworks" src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" alt="Fireworks"/>
+  </section>
+</main>
+
+<script>
+const zone = document.getElementById("zone");
+const yesBtn = document.getElementById("yesBtn");
+const noBtn = document.getElementById("noBtn");
+const result = document.getElementById("result");
+const hint = document.getElementById("hint");
+const canvas = document.getElementById("confettiCanvas");
+
+// Floating lilies
+for(let i=0;i<40;i++){
+  const svgNS="http://www.w3.org/2000/svg";
+  const lily=document.createElementNS(svgNS,"svg");
+  lily.setAttribute("viewBox","0 0 64 64");
+  lily.classList.add("lily-floating");
+  lily.style.left=Math.random()*100+"vw";
+  lily.style.animationDuration=(8+Math.random()*8)+"s";
+  lily.style.animationDelay=(Math.random()*5)+"s";
+  const path=document.createElementNS(svgNS,"path");
+  path.setAttribute("d","M32 4 C20 20 18 30 32 60 C46 30 44 20 32 4Z");
+  lily.appendChild(path);
+  document.body.appendChild(lily);
+}
+
+// Confetti setup
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = innerWidth*dpr;
+  canvas.height = innerHeight*dpr;
+  canvas.style.width="100vw";
+  canvas.style.height="100vh";
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const confettiInstance = confetti.create(canvas,{resize:false,useWorker:true});
+function blastConfetti(){
+  const end = Date.now()+1500;
+  (function frame(){
+    confettiInstance({
+      particleCount:10,
+      spread:100,
+      startVelocity:40,
+      origin:{x:Math.random(),y:Math.random()*0.4}
+    });
+    if(Date.now()<end) requestAnimationFrame(frame);
+  })();
+}
+
+// Button logic
+let yesScale=1;
+function growYes(){
+  yesScale=Math.min(2.2,yesScale+0.12);
+  yesBtn.style.transform=`translate(-50%, -50%) scale(${yesScale})`;
+}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function moveNo(x,y){
+  const z=zone.getBoundingClientRect();
+  const b=noBtn.getBoundingClientRect();
+  let dx=(b.left+b.width/2)-x;
+  let dy=(b.top+b.height/2)-y;
+  let mag=Math.hypot(dx,dy)||1;
+  dx/=mag; dy/=mag;
+  let left=(b.left-z.left)+dx*140;
+  let top=(b.top-z.top)+dy*140;
+  noBtn.style.left=clamp(left,0,z.width-b.width)+"px";
+  noBtn.style.top=clamp(top,0,z.height-b.height)+"px";
+  growYes();
+}
+zone.addEventListener("pointermove",e=>{
+  const b=noBtn.getBoundingClientRect();
+  const d=Math.hypot((b.left+b.width/2)-e.clientX,(b.top+b.height/2)-e.clientY);
+  if(d<130) moveNo(e.clientX,e.clientY);
+});
+noBtn.addEventListener("click",e=>e.preventDefault());
+
+yesBtn.addEventListener("click",()=>{
+  zone.style.display="none";
+  hint.style.display="none";
+  result.style.display="block";
+  resizeCanvas();
+  blastConfetti();
+});
+
+// Automatically trigger "Yes" for one-click link on iPhone
+window.addEventListener("load", () => {
+  yesBtn.click(); // works on direct tap
+});
+</script>
+</body>
+</html>
